@@ -1,34 +1,41 @@
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ChatMemberHandler, ContextTypes
 
+# توکن ربات رو مستقیم وارد کن
 TOKEN = "8065966447:AAEfmJWG_JIGN038gZtftpzVTmg5bGF-wW8"
 
 async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    result = update.chat_member
+    cmu = update.chat_member
+    if not cmu:
+        return
 
-    # وضعیت قبلی و جدید عضو
-    old_status = result.old_chat_member.status
-    new_status = result.new_chat_member.status
+    old_status = cmu.old_chat_member.status
+    new_status = cmu.new_chat_member.status
 
-    # فقط وقتی که عضو جدید شده یا تازه به گروه اضافه شده
     if new_status in ("member", "administrator") and old_status not in ("member", "administrator"):
-        user = result.new_chat_member.user
+        user = cmu.new_chat_member.user
         chat = update.effective_chat
+        if not chat:
+            return
 
-        # تعداد اعضای گروه
-        member_count = await context.bot.get_chat_member_count(chat.id)
+        chat_obj = await context.bot.get_chat(chat.id)
+        member_count = getattr(chat_obj, "member_count", None)
 
-        # پیام خوش‌آمد
         text = (
             f"{user.first_name} عزیز 🌿\n\n"
             f"به شهری امن خوش آمدی!\n"
-            f"حالا ما {member_count} نفر هستیم که تصمیم گرفتیم آگاهی‌مان را بالا ببریم و یک شهر امن بسازیم!"
+            f"حالا ما {member_count or 'چند'} نفر هستیم که تصمیم گرفتیم آگاهی‌مان را بالا ببریم و یک شهر امن بسازیم!"
         )
 
-        await context.bot.send_message(chat.id, text)
+        await context.bot.send_message(chat_id=chat.id, text=text)
 
-app = ApplicationBuilder().token(TOKEN).build()
+def main():
+    if not TOKEN:
+        raise RuntimeError("توکن ربات را در متغیر TOKEN قرار بده")
 
-app.add_handler(ChatMemberHandler(welcome, ChatMemberHandler.CHAT_MEMBER))
+    app = ApplicationBuilder().token(TOKEN).build()
+    app.add_handler(ChatMemberHandler(welcome, ChatMemberHandler.CHAT_MEMBER))
+    app.run_polling()
 
-app.run_polling()
+if __name__ == "__main__":
+    main()

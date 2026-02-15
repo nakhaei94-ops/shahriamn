@@ -1,41 +1,38 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ChatMemberHandler, ContextTypes
+from telegram import Update, ChatPermissions
+from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-# توکن ربات رو مستقیم وارد کن
 TOKEN = "8065966447:AAEfmJWG_JIGN038gZtftpzVTmg5bGF-wW8"
 
+
 async def welcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    cmu = update.chat_member
-    if not cmu:
-        return
 
-    old_status = cmu.old_chat_member.status
-    new_status = cmu.new_chat_member.status
+    if update.message.new_chat_members:
 
-    if new_status in ("member", "administrator") and old_status not in ("member", "administrator"):
-        user = cmu.new_chat_member.user
-        chat = update.effective_chat
-        if not chat:
-            return
+        # گرفتن تعداد اعضای گروه
+        member_count = await context.bot.get_chat_member_count(update.effective_chat.id)
 
-        chat_obj = await context.bot.get_chat(chat.id)
-        member_count = getattr(chat_obj, "member_count", None)
+        for member in update.message.new_chat_members:
 
-        text = (
-            f"{user.first_name} عزیز 🌿\n\n"
-            f"به شهری امن خوش آمدی!\n"
-            f"حالا ما {member_count or 'چند'} نفر هستیم که تصمیم گرفتیم آگاهی‌مان را بالا ببریم و یک شهر امن بسازیم!"
-        )
+            text = (
+                f"{member.first_name} عزیز 🌿\n\n"
+                f"به شهری امن خوش اومدی!\n"
+                f"حالا ما {member_count} تا شهروندیم که تصمیم گرفتیم آگاهی‌مون رو بالا ببریم و یه شهر امن بسازیم!"
+            )
 
-        await context.bot.send_message(chat_id=chat.id, text=text)
+            await update.message.reply_text(text)
 
-def main():
-    if not TOKEN:
-        raise RuntimeError("توکن ربات را در متغیر TOKEN قرار بده")
+            # محدود کردن ارسال پیام
+            permissions = ChatPermissions(can_send_messages=False)
 
-    app = ApplicationBuilder().token(TOKEN).build()
-    app.add_handler(ChatMemberHandler(welcome, ChatMemberHandler.CHAT_MEMBER))
-    app.run_polling()
+            await context.bot.restrict_chat_member(
+                chat_id=update.effective_chat.id,
+                user_id=member.id,
+                permissions=permissions
+            )
 
-if __name__ == "__main__":
-    main()
+
+app = ApplicationBuilder().token(TOKEN).build()
+
+app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
+
+app.run_polling()

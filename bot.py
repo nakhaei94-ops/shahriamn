@@ -44,7 +44,7 @@ async def welcome_chat_member(update: Update, context: ContextTypes.DEFAULT_TYPE
         member_count = await context.bot.get_chat_member_count(chat_id)
 
         text = (
-            f"{member.first_name} عزیز 🌿\n\n"
+            f"  درود{member.first_name} عزیز 🌿\n\n"
             f"به شهری امن خوش اومدی!\n"
             f"حالا ما {member_count} تا شهروندیم که تصمیم گرفتیم آگاهی‌مون رو بالا ببریم و یه شهر امن بسازیم!"
         )
